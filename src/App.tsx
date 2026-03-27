@@ -236,7 +236,7 @@ export default function App() {
           </div>
           
           <h1 className="text-5xl font-serif text-[#1e293b] font-medium mb-4 tracking-tight">Bảng thông minh</h1>
-          <p className="text-xs uppercase tracking-[0.4em] text-[#64748b] font-sans font-semibold mb-12">Giải pháp số hóa nề nếp</p>
+          <p className="text-xs uppercase tracking-[0.4em] text-[#64748b] font-sans font-semibold mb-12">Giải pháp hóa nền số</p>
           
           <div className="space-y-4">
             <button 
