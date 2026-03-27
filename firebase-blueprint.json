@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "WeeklyRecord": {
+      "title": "Weekly Record",
+      "description": "Weekly emulation data for a class",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string" },
+        "weekId": { "type": "number" },
+        "data": { "type": "string", "description": "JSON stringified WeeklyData" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["classId", "weekId", "data", "updatedAt", "updatedBy"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Authenticated user",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "teacher"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "weeklyRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/WeeklyRecord" },
+      "description": "Stores weekly records for classes"
+    },
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles and roles"
+    }
+  }
+}

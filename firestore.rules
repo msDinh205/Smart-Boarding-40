@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: weeklyRecords
+    // Document ID: {classId}_{weekId}
+    // Fields:
+    //   - classId: string (required, < 10 chars) - Class identifier
+    //   - weekId: number (required, 1-53) - Week number
+    //   - data: string (required, < 100000 chars) - JSON stringified WeeklyData
+    //   - updatedAt: string (required) - ISO 8601 date string
+    //   - updatedBy: string (required) - UID of the user who updated it
+    //
+    // Collection: users
+    // Document ID: {userId} (matches auth.uid)
+    // Fields:
+    //   - email: string (required, valid email) - User email
+    //   - displayName: string (optional, < 100 chars) - User display name
+    //   - role: string (required, 'admin' or 'teacher') - User role
+    //
+    // ===============================================================
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "vtdinh.ntdongvan@hagiang.edu.vn" && request.auth.token.email_verified == true)
+        );
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && 
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher']) ||
+          (request.auth.token.email == "vtdinh.ntdongvan@hagiang.edu.vn" && request.auth.token.email_verified == true)
+        );
+    }
+
+    function isValidWeeklyRecord() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['classId', 'weekId', 'data', 'updatedAt', 'updatedBy']) &&
+             data.keys().hasOnly(['classId', 'weekId', 'data', 'updatedAt', 'updatedBy']) &&
+             data.classId is string && data.classId.size() > 0 && data.classId.size() < 10 &&
+             data.weekId is number && data.weekId > 0 && data.weekId <= 53 &&
+             data.data is string && data.data.size() < 100000 &&
+             data.updatedAt is string && data.updatedAt.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$") &&
+             data.updatedBy is string && data.updatedBy == request.auth.uid;
+    }
+
+    function isValidUser() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['email', 'role']) &&
+             data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") &&
+             data.role in ['admin', 'teacher'] &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /weeklyRecords/{recordId} {
+      allow read: if isAuthenticated();
+      allow create: if isTeacher() && isValidWeeklyRecord();
+      allow update: if isTeacher() && isValidWeeklyRecord() && 
+                    request.resource.data.classId == resource.data.classId && 
+                    request.resource.data.weekId == resource.data.weekId;
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidUser() && 
+                    ((request.auth.uid == userId && request.resource.data.role == 'teacher') || isAdmin());
+      allow update: if isAuthenticated() && isValidUser() && 
+                    ((request.auth.uid == userId && request.resource.data.role == resource.data.role) || isAdmin());
+      allow delete: if isAdmin();
+    }
+  }
+}
