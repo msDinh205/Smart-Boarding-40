@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Key, Cpu, AlertCircle, ExternalLink } from 'lucide-react';
-import { getApiKey, saveApiKey, getSelectedModel, saveSelectedModel } from '../lib/gemini';
+import { getApiKey, saveApiKey, getSelectedModel, saveSelectedModel } from '../../lib/gemini';
 
 interface SettingsModalProps {
   isOpen: boolean;
