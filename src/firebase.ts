@@ -8,5 +8,16 @@ export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
 
-export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
+export const loginWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (error: any) {
+    console.error("Firebase Login Error:", error);
+    if (error.code === 'auth/popup-blocked') {
+      throw new Error("Trình duyệt đã chặn cửa sổ đăng nhập. Vui lòng kiểm tra cài đặt trình duyệt.");
+    }
+    throw error;
+  }
+};
 export const logout = () => signOut(auth);
