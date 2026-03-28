@@ -1,38 +1,34 @@
 import React from 'react';
-import { Settings, LogOut, User as UserIcon } from 'lucide-react';
-import { User } from 'firebase/auth';
+import { Sparkles } from 'lucide-react';
 import { ClassName, CLASSES } from '../../types';
 import { cn } from '../../lib/utils';
 
 interface HeaderProps {
-  user: User;
-  logout: () => void;
   selectedClass: ClassName;
-  setSelectedClass: (cls: ClassName) => void;
+  setSelectedClass: (c: ClassName) => void;
   selectedWeek: number;
-  setSelectedWeek: (week: number) => void;
+  setSelectedWeek: (w: number) => void;
   roomCount: number;
-  setRoomCount: (count: number) => void;
-  activeTab: 'input' | 'result';
-  setActiveTab: (tab: 'input' | 'result') => void;
+  setRoomCount: (n: number) => void;
+  studentCount: number;
+  setStudentCount: (n: number) => void;
+  activeTab: 'input' | 'result' | 'ranking';
+  setActiveTab: (t: 'input' | 'result' | 'ranking') => void;
+  onLogout: () => void;
   onOpenSettings: () => void;
   hasApiKey: boolean;
 }
 
-export default function Header({ 
-  user, 
-  logout, 
-  selectedClass, 
-  setSelectedClass, 
-  selectedWeek, 
-  setSelectedWeek,
-  roomCount,
-  setRoomCount,
-  activeTab, 
-  setActiveTab,
+export const Header: React.FC<HeaderProps> = ({
+  selectedClass, setSelectedClass,
+  selectedWeek, setSelectedWeek,
+  roomCount, setRoomCount,
+  studentCount, setStudentCount,
+  activeTab, setActiveTab,
+  onLogout,
   onOpenSettings,
   hasApiKey
-}: HeaderProps) {
+}) => {
   return (
     <header className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center bg-green-700 text-white sticky top-0 z-20 gap-4 print:hidden shadow-xl border-b-4 border-green-900">
       <div>
@@ -44,6 +40,15 @@ export default function Header({
       </div>
       
       <div className="flex flex-wrap items-center gap-4">
+        {!hasApiKey && (
+          <button 
+            onClick={onOpenSettings}
+            className="text-red-400 font-bold text-xs uppercase animate-pulse border border-red-400 px-2 py-1 rounded"
+          >
+            Lấy API key để sử dụng app
+          </button>
+        )}
+        
         <div className="flex items-center gap-2">
           <select 
             value={selectedClass}
@@ -61,7 +66,7 @@ export default function Header({
             {Array.from({length: 35}, (_, i) => i + 1).map(w => <option key={w} value={w}>Tuần {w}</option>)}
           </select>
           
-          <div className="flex items-center gap-2 border border-green-600 bg-green-800 px-3 py-2 transition-colors focus-within:border-green-400 rounded-sm" title="Số lượng phòng nội trú của lớp này">
+          <div className="flex items-center gap-2 border border-green-600 bg-green-800 px-3 py-2 transition-colors focus-within:border-green-400 rounded-sm">
             <span className="text-sm font-mono text-green-200/70">Phòng:</span>
             <input 
               type="number" 
@@ -74,64 +79,32 @@ export default function Header({
         </div>
 
         <div className="flex gap-2 bg-green-800 p-1 border border-green-600 rounded-sm">
-          <button 
-            onClick={() => setActiveTab('input')}
-            className={cn(
-              "px-4 py-1.5 text-xs font-mono uppercase tracking-tighter transition-all rounded-sm",
-              activeTab === 'input' ? "bg-green-600 text-white font-bold shadow-md" : "text-green-200/70 hover:text-white hover:bg-green-700"
-            )}
-          >
-            Nhập liệu
-          </button>
-          <button 
-            onClick={() => setActiveTab('result')}
-            className={cn(
-              "px-4 py-1.5 text-xs font-mono uppercase tracking-tighter transition-all rounded-sm",
-              activeTab === 'result' ? "bg-green-600 text-white font-bold shadow-md" : "text-green-200/70 hover:text-white hover:bg-green-700"
-            )}
-          >
-            Kết quả
-          </button>
+          {['input', 'result', 'ranking'].map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={cn(
+                "px-4 py-1.5 text-xs font-mono uppercase tracking-tighter transition-all rounded-sm",
+                activeTab === tab ? "bg-green-600 text-white font-bold shadow-md" : "text-green-200/70 hover:text-white hover:bg-green-700"
+              )}
+            >
+              {tab === 'input' ? 'Nhập liệu' : tab === 'result' ? 'Kết quả' : 'Xếp hạng'}
+            </button>
+          ))}
         </div>
         
         <div className="flex items-center gap-3 ml-2 pl-4 border-l border-green-600">
-          <button 
-            onClick={onOpenSettings}
-            className="relative p-2 text-green-200 hover:text-white transition-colors group"
-            title="Cấu hình AI"
-          >
-            <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform" />
-            {!hasApiKey && (
-              <>
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                </span>
-                <span className="absolute top-10 right-0 whitespace-nowrap bg-red-600 text-white text-[9px] font-bold px-2 py-1 rounded shadow-lg">LẤY API KEY ĐỂ SỬ DỤNG</span>
-              </>
-            )}
+          <button onClick={onOpenSettings} className="hover:text-green-200 transition-colors">
+            <Sparkles size={18} />
           </button>
-
-          <div className="hidden md:block text-right">
-            <p className="text-xs font-bold text-white leading-tight">{user.displayName || 'Giáo viên'}</p>
-            <p className="text-[10px] text-green-200 font-mono">{user.email}</p>
-          </div>
-          {user.photoURL ? (
-            <img src={user.photoURL} alt="Avatar" className="w-8 h-8 rounded-full border border-green-400" referrerPolicy="no-referrer" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-green-800 border border-green-400 flex items-center justify-center text-xs font-bold">
-              <UserIcon size={14} />
-            </div>
-          )}
           <button 
-            onClick={logout}
+            onClick={onLogout}
             className="text-green-200 hover:text-white transition-colors p-1"
-            title="Đăng xuất"
           >
-            <LogOut className="w-5 h-5" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           </button>
         </div>
       </div>
     </header>
   );
-}
+};
